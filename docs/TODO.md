@@ -14,15 +14,40 @@
 - [x] (main) Route Group 및 레이아웃 통합
 
 ### 1-3. 홈 피드 - 게시물 목록
-- [ ] PostCard 컴포넌트 (Header, Image, Actions, Content)
-- [ ] PostCardSkeleton 로딩 UI
-- [ ] PostFeed 컴포넌트
-- [ ] /api/posts GET API (페이지네이션)
+- [x] date-fns 라이브러리 설치 (상대 시간 표시용)
+- [x] TypeScript 타입 정의 (types/post.ts)
+  - Post, PostWithAuthor, CommentPreview, PostFeedResponse 타입
+- [x] 날짜 유틸리티 함수 (lib/utils/date.ts - formatRelativeTime)
+- [x] /api/posts GET API 구현
+  - post_stats 뷰 + users 테이블 JOIN
+  - 현재 사용자 좋아요 여부 확인 (isLiked)
+  - 댓글 미리보기 조회 (각 게시물별 최신 2개)
+  - 페이지네이션 지원 (page, limit, userId 파라미터)
+  - 에러 처리 (네트워크/서버/빈 결과 구분)
+- [x] PostCardSkeleton 컴포넌트 (로딩 UI)
+  - PostCard와 동일한 레이아웃 구조
+  - animate-pulse 애니메이션
+- [x] PostCard 컴포넌트 (Instagram 스타일 게시물 카드)
+  - Header: 프로필 이미지, 사용자명, 상대 시간, 메뉴 버튼
+  - Image: 정사각형 비율, Next.js Image 컴포넌트 사용
+  - Actions: 좋아요/댓글/공유/북마크 버튼 (UI만)
+  - Content: 좋아요 수, 캡션, 댓글 미리보기
+- [x] PostFeed 컴포넌트 (게시물 목록 관리)
+  - API 호출 및 상태 관리
+  - 로딩/에러/빈 상태 처리
+  - commentsByPostId 활용
+- [x] 홈 페이지 통합 (app/(main)/page.tsx)
+  - PostFeed 컴포넌트 사용
+  - 임시 콘텐츠 제거
+- [x] 빌드 및 배포 준비
+  - 타입 에러 해결
+  - ESLint warning 수정
+  - 프로덕션 빌드 성공
 
 ### 1-4. 홈 피드 - 좋아요 기능
-- [ ] likes 테이블 활용 (이미 생성됨)
-- [ ] /api/likes POST/DELETE API
-- [ ] 좋아요 버튼 및 애니메이션 (하트 + 더블탭)
+- [x] likes 테이블 활용 (이미 생성됨)
+- [x] /api/likes POST/DELETE API
+- [x] 좋아요 버튼 및 애니메이션 (하트 + 더블탭)
 
 ## 2. 게시물 작성 & 댓글 기능
 

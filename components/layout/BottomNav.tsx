@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
   {
     id: "profile",
     label: "프로필",
-    href: "/profile/[userId]", // 동적 라우트로 변경 예정
+    href: "#", // 프로필 페이지는 아직 구현되지 않음 (3-1에서 구현 예정)
     icon: User,
     requiresAuth: true,
   },
@@ -57,25 +57,57 @@ const navItems: NavItem[] = [
 export default function BottomNav() {
   const { userId } = useAuth();
   const pathname = usePathname();
-
-  // 프로필 링크를 동적으로 생성
-  const getProfileHref = (item: NavItem) => {
-    if (item.id === "profile" && userId) {
-      return `/profile/${userId}`;
-    }
-    return item.href;
-  };
+  const router = useRouter();
 
   // 네비 아이템 렌더링 (인증 필요 항목 필터링)
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname === item.href || (item.id === "profile" && pathname.startsWith("/profile/"));
     const isDisabled = item.requiresAuth && !userId;
-    const href = getProfileHref(item);
+
+    // 프로필 항목은 아직 구현되지 않았으므로 button으로 처리
+    if (item.id === "profile") {
+      return (
+        <button
+          key={item.id}
+          onClick={() => {
+            if (userId) {
+              // 프로필 페이지가 아직 구현되지 않았으므로 임시로 alert 표시
+              alert("프로필 페이지는 아직 개발 중입니다. (3-1. 프로필 페이지 구현 예정)");
+              // 추후 구현 시: router.push(`/profile/${userId}`);
+            }
+          }}
+          disabled={isDisabled}
+          className={`
+            flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[44px]
+            transition-colors relative
+            ${isActive
+              ? "text-black"
+              : "text-gray-500 hover:text-gray-700"
+            }
+            ${isDisabled ? "pointer-events-none opacity-50" : ""}
+          `}
+        >
+          <item.icon
+            className={`w-6 h-6 mb-1 ${
+              isActive ? "fill-current" : ""
+            }`}
+          />
+          <span className="text-xs font-medium">
+            {item.label}
+          </span>
+
+          {/* Active 인디케이터 */}
+          {isActive && (
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-black rounded-full" />
+          )}
+        </button>
+      );
+    }
 
     return (
       <Link
         key={item.id}
-        href={href}
+        href={item.href}
         className={`
           flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[44px]
           transition-colors relative
@@ -90,7 +122,7 @@ export default function BottomNav() {
             e.preventDefault();
           }
           // placeholder 링크들은 클릭 방지
-          if (href === "#") {
+          if (item.href === "#") {
             e.preventDefault();
           }
         }}
