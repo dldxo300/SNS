@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import CreatePostModal from "@/components/post/create-post-modal";
+import { Button } from "@/components/ui/button";
 import {
   Home,
   Search,
@@ -178,6 +179,28 @@ export default function Sidebar() {
       <nav className="space-y-1">
         {menuItems.map(renderMenuItem)}
       </nav>
+
+      {/* 로그인 상태 */}
+      <div className="mt-8 px-4 space-y-2">
+        {isLoaded && userId ? (
+          <>
+            <div className="text-sm text-gray-600">
+              로그인됨
+            </div>
+            <SignOutButton>
+              <Button variant="outline" className="w-full" size="sm">
+                로그아웃
+              </Button>
+            </SignOutButton>
+          </>
+        ) : (
+          <SignInButton mode="modal">
+            <Button className="w-full" size="sm">
+              로그인
+            </Button>
+          </SignInButton>
+        )}
+      </div>
 
       {/* 로딩 상태 */}
       {!isLoaded && (

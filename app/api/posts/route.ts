@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClerkSupabaseClient } from '@/lib/supabase/server';
-import type { PostFeedResponse, PostWithAuthor, CommentPreview } from '@/types/post';
+import type { PostFeedResponse, PostWithAuthor, CommentPreview, CreatePostResponse } from '@/types/post';
 
 /**
  * GET /api/posts
@@ -253,6 +253,223 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { error: '게시물을 불러오는 중 오류가 발생했습니다.' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/posts
+ *
+ * 게시물을 생성합니다.
+ *
+ * 요청 본문 (FormData):
+ * - image: File (이미지 파일)
+ * - caption: string (선택, 최대 2,200자)
+ *
+ * 응답:
+ * - 성공 (200): CreatePostResponse 타입
+ * - 실패 (400/401/404/413/500): { error: string }
+ */
+export async function POST(request: NextRequest) {
+  console.log('[POST /api/posts] 게시물 작성 API 호출됨');
+  
+  try {
+    // 1. 인증 확인
+    const authResult = await auth();
+    console.log('[POST /api/posts] auth() 결과:', { 
+      userId: authResult?.userId, 
+      sessionId: authResult?.sessionId,
+      hasAuth: !!authResult 
+    });
+    
+    const clerkUserId = authResult?.userId;
+    
+    if (!clerkUserId) {
+      console.error('[POST /api/posts] 인증 실패: 사용자 ID 없음', { authResult });
+      return NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+    
+    console.log('[POST /api/posts] 인증 성공:', { clerkUserId });
+
+    // 2. 요청 데이터 파싱
+    const formData = await request.formData();
+    const file = formData.get('image') as File;
+    const caption = formData.get('caption') as string | null;
+
+    console.log('[POST /api/posts] FormData 파싱 완료:', {
+      hasFile: !!file,
+      fileName: file?.name,
+      captionLength: caption?.length
+    });
+
+    // 3. 파일 검증
+    if (!file || !(file instanceof File)) {
+      console.error('[POST /api/posts] 파일 없음');
+      return NextResponse.json(
+        { error: '파일 크기 또는 형식이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 파일 크기 검증 (5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      console.error('[POST /api/posts] 파일 크기 초과:', { size: file.size, maxSize: MAX_FILE_SIZE });
+      return NextResponse.json(
+        { error: '파일이 너무 큽니다. (최대 5MB)' },
+        { status: 413 }
+      );
+    }
+
+    // 파일 형식 검증
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      console.error('[POST /api/posts] 파일 형식 불일치:', { type: file.type, allowedTypes: ALLOWED_TYPES });
+      return NextResponse.json(
+        { error: '파일 크기 또는 형식이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 파일 확장자 검증
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+    if (!fileExtension || !ALLOWED_EXTENSIONS.includes(fileExtension)) {
+      console.error('[POST /api/posts] 파일 확장자 불일치:', { extension: fileExtension, allowedExtensions: ALLOWED_EXTENSIONS });
+      return NextResponse.json(
+        { error: '파일 크기 또는 형식이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. 캡션 검증
+    const MAX_CAPTION_LENGTH = 2200;
+    if (caption && caption.length > MAX_CAPTION_LENGTH) {
+      console.error('[POST /api/posts] 캡션 길이 초과:', { length: caption.length, maxLength: MAX_CAPTION_LENGTH });
+      return NextResponse.json(
+        { error: '파일 크기 또는 형식이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[POST /api/posts] 파일 검증 완료:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      fileExtension,
+      captionLength: caption?.length
+    });
+
+    // 5. Clerk User ID → Supabase User ID 변환
+    const supabase = createClerkSupabaseClient();
+
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('clerk_id', clerkUserId)
+      .single();
+
+    if (userError || !userData) {
+      console.error('[POST /api/posts] 사용자 조회 실패:', { clerkUserId, error: userError });
+      return NextResponse.json(
+        { error: '사용자 정보를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    const supabaseUserId = userData.id;
+    console.log('[POST /api/posts] 사용자 ID 변환 완료:', { clerkUserId, supabaseUserId });
+
+    // 6. 이미지 업로드 (Supabase Storage)
+    // 파일명 생성: 구체적인 형식 사용
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const filename = `${timestamp}-${random}.${ext}`;
+
+    const filePath = `${clerkUserId}/${filename}`;
+
+    console.log('[POST /api/posts] Storage 업로드 시작:', { filePath });
+
+    const { error: uploadError } = await supabase.storage
+      .from('uploads')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,  // 중복 파일 덮어쓰기 방지
+        contentType: file.type,  // MIME type 명시
+      });
+
+    if (uploadError) {
+      console.error('[POST /api/posts] Storage 업로드 실패:', { error: uploadError, filePath });
+      return NextResponse.json(
+        { error: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' },
+        { status: 500 }
+      );
+    }
+
+    // 7. Public URL 생성
+    const { data: urlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filePath);
+
+    const imageUrl = urlData.publicUrl;
+    console.log('[POST /api/posts] Storage 업로드 완료:', { publicUrl: imageUrl });
+
+    // 8. 게시물 데이터베이스 저장
+    const { data: postData, error: postError } = await supabase
+      .from('posts')
+      .insert({
+        user_id: supabaseUserId,
+        image_url: imageUrl,
+        caption: caption,
+      })
+      .select('id, user_id, image_url, caption, created_at')
+      .single();
+
+    if (postError || !postData) {
+      console.error('[POST /api/posts] 게시물 저장 실패:', { error: postError, supabaseUserId, imageUrl });
+
+      // 업로드된 파일 삭제 (rollback)
+      await supabase.storage
+        .from('uploads')
+        .remove([filePath]);
+
+      return NextResponse.json(
+        { error: '게시물 작성에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    const postId = postData.id;
+    console.log('[POST /api/posts] 게시물 저장 완료:', { postId });
+
+    // 9. 성공 응답
+    const response: CreatePostResponse = {
+      success: true,
+      post: {
+        id: postData.id,
+        user_id: postData.user_id,
+        image_url: postData.image_url,
+        caption: postData.caption,
+        created_at: postData.created_at,
+      },
+    };
+
+    console.log('[POST /api/posts] 게시물 작성 완료:', { postId });
+    return NextResponse.json(response, { status: 200 });
+
+  } catch (error) {
+    console.error('[POST /api/posts] 예외 발생:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+
+    return NextResponse.json(
+      { error: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' },
       { status: 500 }
     );
   }

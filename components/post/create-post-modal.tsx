@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
+import type { CreatePostResponse } from "@/types/post";
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -141,16 +142,79 @@ export default function CreatePostModal({ isOpen, onOpenChange }: CreatePostModa
     }
   };
 
-  // 모달 열기/닫기 핸들러
-  const handleOpenChange = (open: boolean) => {
-    if (open && !userId) {
-      console.log('[CreatePostModal] 비로그인 사용자 - 모달 열기 차단');
-      alert('로그인이 필요합니다.');
+  // 게시물 업로드 핸들러
+  const handleSubmit = async () => {
+    if (!selectedFile) {
+      setError('이미지를 선택해주세요.');
+      return;
+    }
+
+    if (!userId) {
+      setError('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
+      // 로그인 페이지로 이동
       setTimeout(() => {
         router.push('/sign-in');
       }, 2000);
       return;
     }
+
+    console.log('[CreatePostModal] 업로드 시작:', { fileName: selectedFile.name, fileSize: selectedFile.size });
+
+    try {
+      setIsUploading(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('caption', caption);
+
+      console.log('[CreatePostModal] API 요청 시작');
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        body: formData,
+        // Clerk는 자동으로 쿠키를 통해 인증을 처리합니다.
+        // Authorization 헤더는 필요하지 않습니다.
+      });
+      console.log('[CreatePostModal] API 응답:', { ok: response.ok, status: response.status });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '게시물 작성에 실패했습니다.');
+      }
+
+      const data: CreatePostResponse = await response.json();
+      console.log('[CreatePostModal] 업로드 성공:', data);
+
+      // 모달 닫기 (상태 초기화는 useEffect에서 처리)
+      onOpenChange(false);
+
+      // 피드 새로고침 (router.refresh())
+      router.refresh();
+    } catch (err) {
+      console.error('[CreatePostModal] 업로드 실패:', err);
+      setError(err instanceof Error ? err.message : '게시물 작성에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 모달 열기/닫기 핸들러
+  const handleOpenChange = (open: boolean) => {
+    if (open && !userId) {
+      console.log('[CreatePostModal] 비로그인 사용자 - 모달 열기 차단');
+      setError('로그인이 필요합니다. 로그인 후 게시물을 작성할 수 있습니다.');
+      // 로그인 페이지로 이동
+      setTimeout(() => {
+        router.push('/sign-in');
+      }, 2000);
+      return;
+    }
+
+    // 모달이 닫힐 때는 에러 메시지 초기화
+    if (!open) {
+      setError(null);
+    }
+
     onOpenChange(open);
     console.log('[CreatePostModal] 모달 상태:', open);
   };
@@ -271,10 +335,11 @@ export default function CreatePostModal({ isOpen, onOpenChange }: CreatePostModa
             </div>
           </div>
 
-          {/* 공유하기 버튼 (비활성화) */}
+          {/* 공유하기 버튼 */}
           <Button
             className="w-full"
             disabled={!selectedFile || isUploading}
+            onClick={handleSubmit}
           >
             {isUploading ? (
               "업로드 중..."

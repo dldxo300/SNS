@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, SignOutButton } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import CreatePostModal from "@/components/post/create-post-modal";
+import { Button } from "@/components/ui/button";
 import {
   Home,
   Search,
@@ -101,44 +102,46 @@ export default function BottomNav() {
       );
     }
 
-    // 프로필 항목은 아직 구현되지 않았으므로 button으로 처리
+    // 프로필 항목 - 로그인 상태에 따라 다르게 표시
     if (item.id === "profile") {
-      return (
-        <button
-          key={item.id}
-          onClick={() => {
-            if (userId) {
-              // 프로필 페이지가 아직 구현되지 않았으므로 임시로 alert 표시
-              alert("프로필 페이지는 아직 개발 중입니다. (3-1. 프로필 페이지 구현 예정)");
-              // 추후 구현 시: router.push(`/profile/${userId}`);
-            }
-          }}
-          disabled={isDisabled}
-          className={`
-            flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[44px]
-            transition-colors relative
-            ${isActive
-              ? "text-black"
-              : "text-gray-500 hover:text-gray-700"
-            }
-            ${isDisabled ? "pointer-events-none opacity-50" : ""}
-          `}
-        >
-          <item.icon
-            className={`w-6 h-6 mb-1 ${
-              isActive ? "fill-current" : ""
-            }`}
-          />
-          <span className="text-xs font-medium">
-            {item.label}
-          </span>
-
-          {/* Active 인디케이터 */}
-          {isActive && (
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-black rounded-full" />
-          )}
-        </button>
-      );
+      if (userId) {
+        // 로그인된 경우 - 로그아웃 버튼
+        return (
+          <SignOutButton key={item.id}>
+            <button
+              className={`
+                flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[44px]
+                transition-colors relative text-gray-500 hover:text-gray-700
+              `}
+            >
+              <item.icon className="w-6 h-6 mb-1" />
+              <span className="text-xs font-medium">
+                로그아웃
+              </span>
+            </button>
+          </SignOutButton>
+        );
+      } else {
+        // 로그인하지 않은 경우 - 로그인 버튼
+        return (
+          <button
+            key={item.id}
+            onClick={() => {
+              // 로그인 모달 열기 (SignInButton을 사용하기 위해 별도 컴포넌트에서 처리)
+              alert("로그인이 필요합니다.");
+            }}
+            className={`
+              flex-1 flex flex-col items-center justify-center py-2 px-1 min-h-[44px]
+              transition-colors relative text-gray-500 hover:text-gray-700
+            `}
+          >
+            <item.icon className="w-6 h-6 mb-1" />
+            <span className="text-xs font-medium">
+              로그인
+            </span>
+          </button>
+        );
+      }
     }
 
     return (

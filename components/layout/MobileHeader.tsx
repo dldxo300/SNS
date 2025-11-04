@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Bell, MessageCircle } from "lucide-react";
 
@@ -36,21 +36,26 @@ export default function MobileHeader() {
           <MessageCircle className="w-6 h-6 text-gray-700" />
         </button>
 
-        {/* 프로필 */}
+        {/* 프로필/로그인 */}
         {isLoaded && userId ? (
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
-          />
-        ) : (
-          // 로그인하지 않은 경우 프로필 아이콘만 표시 (클릭 시 로그인 모달)
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-xs text-gray-500">?</span>
+          <div className="flex items-center gap-2">
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: "w-8 h-8",
+                  userButtonPopoverCard: "shadow-lg border",
+                },
+              }}
+            />
           </div>
+        ) : (
+          // 로그인하지 않은 경우 로그인 버튼 표시
+          <SignInButton mode="modal">
+            <button className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors">
+              <span className="text-xs text-gray-600 font-medium">로그인</span>
+            </button>
+          </SignInButton>
         )}
       </div>
     </div>

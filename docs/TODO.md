@@ -111,9 +111,36 @@
   - 상태 관리 방식 동일
 
 ### 2-2. 게시물 작성 - 이미지 업로드
-- [ ] Supabase Storage 버킷 생성
-- [ ] /api/posts POST API
-- [ ] 파일 업로드 로직 및 검증
+- [x] Supabase Storage 버킷 생성 (uploads 버킷)
+- [x] /api/posts POST API
+  - Clerk 인증 통합 (auth() 함수 사용)
+  - FormData 파싱 (image, caption)
+  - 파일 검증 (크기 5MB, 형식 JPG/PNG/WEBP)
+  - Clerk User ID → Supabase User ID 변환
+  - Supabase Storage 업로드 (경로: user_{clerkId}/timestamp-random.ext)
+  - posts 테이블 레코드 생성
+  - 에러 처리 (401/404/413/500)
+  - 상세 로그 추가
+- [x] 파일 업로드 로직 및 검증
+  - 클라이언트: CreatePostModal에서 파일 검증 및 FormData 전송
+  - 서버: API 라우트에서 재검증 및 Storage 업로드
+  - 에러 핸들링 및 사용자 피드백
+- [x] Next.js 이미지 설정
+  - next.config.ts에 Supabase Storage URL 추가
+  - remotePatterns에 txgmkrihicuprkyjwxag.supabase.co 허용
+- [x] CreatePostModal API 연동
+  - fetch로 /api/posts POST 요청
+  - 응답 처리 및 에러 표시
+  - 성공 시 모달 닫기 및 피드 새로고침 (router.refresh())
+  - API 요청/응답 로그 추가
+- [x] 인증 문제 해결
+  - Clerk 쿠키 기반 인증 확인
+  - auth() 함수 호출 방식 개선
+  - 상세 디버깅 로그 추가
+- [x] 빌드 테스트
+  - pnpm build 성공 확인
+  - 타입 에러 없음
+  - 경고만 있음 (사용하지 않는 변수)
 
 ### 2-3. 댓글 기능 - UI & 작성
 - [ ] comments 테이블 활용 (이미 생성됨)
