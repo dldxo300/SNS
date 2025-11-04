@@ -2,16 +2,16 @@
 
 ### 1-1. 기본 세팅
 - [x] Next.js + TypeScript 프로젝트 생성
-- [x] Tailwind CSS 설정 (인스타 컬러 스키마)
-- [x] Clerk 인증 연동 (한국어 설정)
-- [x] Supabase 프로젝트 생성 및 연동
-- [x] 기본 데이터베이스 테이블 (users, posts, likes, comments, follows) - sns_schema.sql 적용 완료
+- [x] Tailwind CSS 설정 (인스타 컬러 스키마) - 기본 Tailwind는 설정됨, Instagram 색상 변수 추가 필요
+- [x] Clerk 인증 연동 (한국어 설정) - middleware.ts, lib/supabase/ 파일들 존재
+- [x] Supabase 프로젝트 생성 및 연동 - lib/supabase/ 파일들 존재
+- [x] 기본 데이터베이스 테이블 (users, posts, likes, comments, follows) - sns_schema.sql 존재
 
 ### 1-2. 레이아웃 구조
-- [ ] Sidebar 컴포넌트 (Desktop/Tablet 반응형) - Navbar.tsx는 있지만 PRD 디자인과 다름
-- [ ] MobileHeader 컴포넌트
-- [ ] BottomNav 컴포넌트
-- [ ] (main) Route Group 및 레이아웃 통합
+- [x] Sidebar 컴포넌트 (Desktop/Tablet 반응형)
+- [x] MobileHeader 컴포넌트
+- [x] BottomNav 컴포넌트
+- [x] (main) Route Group 및 레이아웃 통합
 
 ### 1-3. 홈 피드 - 게시물 목록
 - [ ] PostCard 컴포넌트 (Header, Image, Actions, Content)

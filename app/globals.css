@@ -47,6 +47,15 @@
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
+  /* Instagram Colors */
+  --instagram-blue: #0095f6; /* 버튼, 링크 */
+  --instagram-background: #fafafa; /* 전체 배경 */
+  --instagram-card-background: #ffffff; /* 카드 */
+  --instagram-border: #dbdbdb; /* 테두리 */
+  --instagram-text-primary: #262626; /* 본문 */
+  --instagram-text-secondary: #8e8e8e; /* 보조 */
+  --instagram-like: #ed4956; /* 빨간 하트 */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
