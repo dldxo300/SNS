@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import CreatePostModal from "@/components/post/create-post-modal";
 import {
   Home,
   Search,
@@ -52,10 +54,40 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  // 모달 상태 관리
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   // 메뉴 아이템 렌더링 (인증 필요 항목 필터링)
   const renderMenuItem = (item: MenuItem) => {
     const isActive = pathname === item.href || (item.id === "profile" && pathname.startsWith("/profile/"));
     const isDisabled = item.requiresAuth && !userId;
+
+    // 만들기 항목은 모달 열기로 처리
+    if (item.id === "create") {
+      return (
+        <button
+          key={item.id}
+          onClick={() => setIsCreateModalOpen(true)}
+          className={`
+            w-full group flex items-center gap-4 px-4 py-3 rounded-lg transition-colors text-left
+            ${isActive
+              ? "bg-gray-100 font-semibold"
+              : "hover:bg-gray-50"
+            }
+          `}
+        >
+          <item.icon
+            className={`w-6 h-6 flex-shrink-0 ${
+              isActive ? "text-black" : "text-gray-700 group-hover:text-black"
+            }`}
+          />
+          {/* Desktop에서만 텍스트 표시 (lg: 이상) */}
+          <span className="hidden lg:block text-sm">
+            {item.label}
+          </span>
+        </button>
+      );
+    }
 
     // 프로필 항목은 아직 구현되지 않았으므로 button으로 처리
     if (item.id === "profile") {
@@ -156,6 +188,12 @@ export default function Sidebar() {
           <div className="h-12 bg-gray-100 rounded-lg animate-pulse" />
         </div>
       )}
+
+      {/* 게시물 작성 모달 */}
+      <CreatePostModal
+        isOpen={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </div>
   );
 }
